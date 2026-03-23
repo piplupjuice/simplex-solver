@@ -1,0 +1,215 @@
+import React, { useState } from 'react';
+import { Plus, Minus, Calculator } from 'lucide-react';
+
+const InputForm = ({ onSolve }) => {
+  const [numVars, setNumVars] = useState(2);
+  const [numConstraints, setNumConstraints] = useState(3);
+  const [type, setType] = useState('maximize');
+  
+  const [objective, setObjective] = useState(Array(5).fill(0));
+  const [constraints, setConstraints] = useState(
+    Array(10).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
+  );
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('type')) {
+      const pType = params.get('type');
+      setType(pType);
+      
+      const pVars = parseInt(params.get('vars') || '2');
+      const pCons = parseInt(params.get('cons') || '3');
+      setNumVars(pVars);
+      setNumConstraints(pCons);
+
+      const pObj = params.get('obj');
+      if (pObj) {
+        const objArr = pObj.split(',').map(Number);
+        const newObj = Array(5).fill(0);
+        objArr.forEach((v, i) => { if (i < 5) newObj[i] = v; });
+        setObjective(newObj);
+      }
+
+      const newC = Array(10).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }));
+      for (let i = 0; i < pCons; i++) {
+        const cRow = params.get(`c${i}`);
+        if (cRow) {
+          const parts = cRow.split(',').map(Number);
+          const rhs = parts.pop();
+          parts.forEach((v, j) => { if (j < 5) newC[i].coeffs[j] = v; });
+          newC[i].rhs = rhs;
+        }
+      }
+      setConstraints(newC);
+      
+      // Auto-trigger solve after a brief delay so App receives the callback
+      setTimeout(() => {
+        document.getElementById('solve-btn')?.click();
+      }, 100);
+    }
+  }, []);
+
+  const handleObjChange = (idx, value) => {
+    const newObj = [...objective];
+    newObj[idx] = parseFloat(value) || 0;
+    setObjective(newObj);
+  };
+
+  const handleConstChange = (rIdx, cIdx, value) => {
+    const newC = [...constraints];
+    newC[rIdx].coeffs[cIdx] = parseFloat(value) || 0;
+    setConstraints(newC);
+  };
+
+  const handleRhsChange = (rIdx, value) => {
+    const newC = [...constraints];
+    newC[rIdx].rhs = parseFloat(value) || 0;
+    setConstraints(newC);
+  };
+
+  const loadExample = (id) => {
+    if (id === 1) {
+      setType('maximize');
+      setNumVars(2); setNumConstraints(3);
+      setObjective([3, 5, 0, 0, 0]);
+      setConstraints([
+        { coeffs: [1, 0, 0, 0, 0], rhs: 4 },
+        { coeffs: [0, 2, 0, 0, 0], rhs: 12 },
+        { coeffs: [3, 2, 0, 0, 0], rhs: 18 },
+        ...constraints.slice(3)
+      ]);
+    } else if (id === 2) {
+      setType('minimize');
+      setNumVars(2); setNumConstraints(2);
+      setObjective([-3, 4, 0, 0, 0]); // Note: standard input for Minimize
+      setConstraints([
+        { coeffs: [1, 1, 0, 0, 0], rhs: 4 },
+        { coeffs: [2, 3, 0, 0, 0], rhs: 18 },
+        ...constraints.slice(2)
+      ]);
+    } else if (id === 3) {
+      setType('maximize');
+      setNumVars(3); setNumConstraints(3);
+      setObjective([5, 4, 3, 0, 0]);
+      setConstraints([
+        { coeffs: [2, 3, 1, 0, 0], rhs: 5 },
+        { coeffs: [4, 1, 2, 0, 0], rhs: 11 },
+        { coeffs: [3, 4, 2, 0, 0], rhs: 8 },
+        ...constraints.slice(3)
+      ]);
+    }
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const activeObjective = objective.slice(0, numVars);
+    const activeConstraints = constraints.slice(0, numConstraints).map(c => ({
+      coeffs: c.coeffs.slice(0, numVars),
+      type: '<=', // assuming standard <= for solver
+      rhs: c.rhs
+    }));
+    
+    // Update URL
+    const params = new URLSearchParams();
+    params.set('type', type);
+    params.set('vars', numVars.toString());
+    params.set('cons', numConstraints.toString());
+    params.set('obj', activeObjective.join(','));
+    activeConstraints.forEach((c, i) => {
+      params.set(`c${i}`, [...c.coeffs, c.rhs].join(','));
+    });
+    window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
+
+    onSolve(type, activeObjective, activeConstraints);
+  };
+
+  return (
+    <div className="card p-6 shadow-sm mb-6">
+      <div className="flex justify-between items-center mb-6 border-b pb-4 dark:border-slate-700">
+        <h2 className="text-xl font-bold flex items-center gap-2">
+          <Calculator className="text-primary" />
+          Problem Definition
+        </h2>
+        <div className="flex gap-2">
+          <button type="button" onClick={() => loadExample(1)} className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1 rounded">Ex 1 (Max)</button>
+          <button type="button" onClick={() => loadExample(2)} className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1 rounded">Ex 2 (Min)</button>
+          <button type="button" onClick={() => loadExample(3)} className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1 rounded">Ex 3 (3 Vars)</button>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div>
+            <label className="block text-sm font-medium mb-1">Objective</label>
+            <select value={type} onChange={e => setType(e.target.value)} className="w-full">
+              <option value="maximize">Maximize (Z)</option>
+              <option value="minimize">Minimize (Z)</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Variables (max 5)</label>
+            <div className="flex items-center gap-2">
+              <input type="number" min="2" max="5" value={numVars} onChange={e => setNumVars(parseInt(e.target.value))} className="w-full" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium mb-1">Constraints</label>
+            <div className="flex items-center gap-2">
+              <input type="number" min="1" max="10" value={numConstraints} onChange={e => setNumConstraints(parseInt(e.target.value))} className="w-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* Objective Function */}
+        <div className="bg-blue-50/50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-900/30">
+          <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-3">Objective Function</h3>
+          <div className="flex items-center flex-wrap gap-2 text-lg">
+            <span className="font-bold mr-2">{type === 'maximize' ? 'Max Z =' : 'Min Z ='}</span>
+            {Array(numVars).fill(0).map((_, i) => (
+              <React.Fragment key={i}>
+                {i > 0 && <span className="font-medium text-gray-500">+</span>}
+                <div className="flex items-center">
+                  <input type="number" step="any" value={objective[i] || ''} onChange={e => handleObjChange(i, e.target.value)} className="w-20 text-right" placeholder="0" required />
+                  <span className="ml-1 font-semibold text-gray-700 dark:text-gray-300">x<sub>{i + 1}</sub></span>
+                </div>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
+
+        {/* Constraints */}
+        <div className="bg-gray-50 dark:bg-slate-800/50 p-4 rounded-lg border border-gray-200 dark:border-slate-700">
+          <h3 className="font-semibold mb-3">Constraints</h3>
+          <p className="text-sm text-gray-500 mb-4">Subject to:</p>
+          <div className="space-y-3">
+            {Array(numConstraints).fill(0).map((_, rIdx) => (
+              <div key={rIdx} className="flex items-center flex-wrap gap-2 text-lg">
+                {Array(numVars).fill(0).map((_, cIdx) => (
+                  <React.Fragment key={cIdx}>
+                    {cIdx > 0 && <span className="font-medium text-gray-400">+</span>}
+                    <div className="flex items-center">
+                      <input type="number" step="any" value={constraints[rIdx].coeffs[cIdx] || ''} onChange={e => handleConstChange(rIdx, cIdx, e.target.value)} className="w-16 text-right" placeholder="0" required />
+                      <span className="ml-1 font-semibold text-gray-600 dark:text-gray-400">x<sub>{cIdx + 1}</sub></span>
+                    </div>
+                  </React.Fragment>
+                ))}
+                <span className="mx-2 font-bold text-gray-500">≤</span>
+                <input type="number" step="any" value={constraints[rIdx].rhs || ''} onChange={e => handleRhsChange(rIdx, e.target.value)} className="w-20 text-right font-medium" placeholder="RHS" required />
+              </div>
+            ))}
+            <div className="pt-2 text-sm text-gray-500 italics">
+              x<sub>1</sub>, x<sub>2</sub>, ... x<sub>n</sub> ≥ 0
+            </div>
+          </div>
+        </div>
+
+        <button id="solve-btn" type="submit" className="primary w-full shadow-md hover:shadow-lg flex justify-center items-center gap-2 py-3 text-lg">
+          <Calculator size={20} />
+          Solve Problem
+        </button>
+      </form>
+    </div>
+  );
+};
+
+export default InputForm;
