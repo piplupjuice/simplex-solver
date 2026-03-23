@@ -100,20 +100,23 @@ const InputForm = ({ onSolve }) => {
     }
   };
 
+  // Prevent Array(NaN) or negative length crashes when inputs are empty
+  const safeNumVars = Math.max(2, Math.min(5, parseInt(numVars) || 2));
+  const safeNumCons = Math.max(1, Math.min(10, parseInt(numConstraints) || 1));
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    const activeObjective = objective.slice(0, numVars).map(v => parseFloat(v) || 0);
-    const activeConstraints = constraints.slice(0, numConstraints).map(c => ({
-      coeffs: c.coeffs.slice(0, numVars).map(v => parseFloat(v) || 0),
-      type: '<=', // assuming standard <= for solver
+    const activeObjective = objective.slice(0, safeNumVars).map(v => parseFloat(v) || 0);
+    const activeConstraints = constraints.slice(0, safeNumCons).map(c => ({
+      coeffs: c.coeffs.slice(0, safeNumVars).map(v => parseFloat(v) || 0),
+      type: '<=', 
       rhs: parseFloat(c.rhs) || 0
     }));
     
-    // Update URL
     const params = new URLSearchParams();
     params.set('type', type);
-    params.set('vars', numVars.toString());
-    params.set('cons', numConstraints.toString());
+    params.set('vars', safeNumVars.toString());
+    params.set('cons', safeNumCons.toString());
     params.set('obj', activeObjective.join(','));
     activeConstraints.forEach((c, i) => {
       params.set(`c${i}`, [...c.coeffs, c.rhs].join(','));
@@ -150,13 +153,13 @@ const InputForm = ({ onSolve }) => {
           <div>
             <label className="block text-sm font-medium mb-1">Variables (max 5)</label>
             <div className="flex items-center gap-2">
-              <input type="number" min="2" max="5" value={numVars} onChange={e => setNumVars(parseInt(e.target.value))} className="w-full" />
+              <input type="number" min="2" max="5" value={numVars} onChange={e => setNumVars(e.target.value)} className="w-full" />
             </div>
           </div>
           <div>
             <label className="block text-sm font-medium mb-1">Constraints</label>
             <div className="flex items-center gap-2">
-              <input type="number" min="1" max="10" value={numConstraints} onChange={e => setNumConstraints(parseInt(e.target.value))} className="w-full" />
+              <input type="number" min="1" max="10" value={numConstraints} onChange={e => setNumConstraints(e.target.value)} className="w-full" />
             </div>
           </div>
         </div>
@@ -166,7 +169,7 @@ const InputForm = ({ onSolve }) => {
           <h3 className="font-semibold text-blue-800 dark:text-blue-300 mb-3">Objective Function</h3>
           <div className="flex items-center flex-wrap gap-2 text-lg">
             <span className="font-bold mr-2">{type === 'maximize' ? 'Max Z =' : 'Min Z ='}</span>
-            {Array(numVars).fill(0).map((_, i) => (
+            {Array(safeNumVars).fill(0).map((_, i) => (
               <React.Fragment key={i}>
                 {i > 0 && <span className="font-medium text-gray-500">+</span>}
                 <div className="flex items-center">
@@ -183,9 +186,9 @@ const InputForm = ({ onSolve }) => {
           <h3 className="font-semibold mb-3">Constraints</h3>
           <p className="text-sm text-gray-500 mb-4">Subject to:</p>
           <div className="space-y-3">
-            {Array(numConstraints).fill(0).map((_, rIdx) => (
+            {Array(safeNumCons).fill(0).map((_, rIdx) => (
               <div key={rIdx} className="flex items-center flex-wrap gap-2 text-lg">
-                {Array(numVars).fill(0).map((_, cIdx) => (
+                {Array(safeNumVars).fill(0).map((_, cIdx) => (
                   <React.Fragment key={cIdx}>
                     {cIdx > 0 && <span className="font-medium text-gray-400">+</span>}
                     <div className="flex items-center">
