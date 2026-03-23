@@ -91,7 +91,9 @@ export const identifyPivot = (tableau) => {
   if (pivotCol === -1) {
     tableau.isOptimal = true;
     tableau.pivotCell = null;
-    tableau.narration = "All z-row coefficients are optimal (≥ 0). The current solution is optimal.";
+    tableau.narration = tableau.stepNumber === 0 
+      ? "No negative values exist in the Zj - Cj row. This means the problem cannot be improved further, so the origin (0) perfectly represents the Optimal Solution without taking any steps!"
+      : "Because there are no negative values left in the Z-row (Zj - Cj), we cannot improve the objective any further. We have successfully found the Optimal Solution!";
     return tableau;
   }
 

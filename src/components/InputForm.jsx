@@ -51,19 +51,19 @@ const InputForm = ({ onSolve }) => {
 
   const handleObjChange = (idx, value) => {
     const newObj = [...objective];
-    newObj[idx] = parseFloat(value) || 0;
+    newObj[idx] = value;
     setObjective(newObj);
   };
 
   const handleConstChange = (rIdx, cIdx, value) => {
     const newC = [...constraints];
-    newC[rIdx].coeffs[cIdx] = parseFloat(value) || 0;
+    newC[rIdx].coeffs[cIdx] = value;
     setConstraints(newC);
   };
 
   const handleRhsChange = (rIdx, value) => {
     const newC = [...constraints];
-    newC[rIdx].rhs = parseFloat(value) || 0;
+    newC[rIdx].rhs = value;
     setConstraints(newC);
   };
 
@@ -81,7 +81,7 @@ const InputForm = ({ onSolve }) => {
     } else if (id === 2) {
       setType('minimize');
       setNumVars(2); setNumConstraints(2);
-      setObjective([2, 3, 0, 0, 0]); 
+      setObjective([-2, -3, 0, 0, 0]); 
       setConstraints([
         { coeffs: [1, 1, 0, 0, 0], rhs: 10 },
         { coeffs: [2, 1, 0, 0, 0], rhs: 15 },
@@ -102,11 +102,11 @@ const InputForm = ({ onSolve }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    const activeObjective = objective.slice(0, numVars);
+    const activeObjective = objective.slice(0, numVars).map(v => parseFloat(v) || 0);
     const activeConstraints = constraints.slice(0, numConstraints).map(c => ({
-      coeffs: c.coeffs.slice(0, numVars),
+      coeffs: c.coeffs.slice(0, numVars).map(v => parseFloat(v) || 0),
       type: '<=', // assuming standard <= for solver
-      rhs: c.rhs
+      rhs: parseFloat(c.rhs) || 0
     }));
     
     // Update URL
@@ -170,7 +170,7 @@ const InputForm = ({ onSolve }) => {
               <React.Fragment key={i}>
                 {i > 0 && <span className="font-medium text-gray-500">+</span>}
                 <div className="flex items-center">
-                  <input type="number" step="any" value={objective[i] || ''} onChange={e => handleObjChange(i, e.target.value)} className="w-20 text-right" placeholder="0" required />
+                  <input type="number" step="any" value={objective[i] === 0 ? '0' : objective[i]} onChange={e => handleObjChange(i, e.target.value)} className="w-20 text-right" placeholder="0" required />
                   <span className="ml-1 font-semibold text-gray-700 dark:text-gray-300">x<sub>{i + 1}</sub></span>
                 </div>
               </React.Fragment>
@@ -189,13 +189,13 @@ const InputForm = ({ onSolve }) => {
                   <React.Fragment key={cIdx}>
                     {cIdx > 0 && <span className="font-medium text-gray-400">+</span>}
                     <div className="flex items-center">
-                      <input type="number" step="any" value={constraints[rIdx].coeffs[cIdx] || ''} onChange={e => handleConstChange(rIdx, cIdx, e.target.value)} className="w-16 text-right" placeholder="0" required />
+                      <input type="number" step="any" value={constraints[rIdx].coeffs[cIdx] === 0 ? '0' : constraints[rIdx].coeffs[cIdx]} onChange={e => handleConstChange(rIdx, cIdx, e.target.value)} className="w-16 text-right" placeholder="0" required />
                       <span className="ml-1 font-semibold text-gray-600 dark:text-gray-400">x<sub>{cIdx + 1}</sub></span>
                     </div>
                   </React.Fragment>
                 ))}
                 <span className="mx-2 font-bold text-gray-500">≤</span>
-                <input type="number" step="any" value={constraints[rIdx].rhs || ''} onChange={e => handleRhsChange(rIdx, e.target.value)} className="w-20 text-right font-medium" placeholder="RHS" required />
+                <input type="number" step="any" value={constraints[rIdx].rhs === 0 ? '0' : constraints[rIdx].rhs} onChange={e => handleRhsChange(rIdx, e.target.value)} className="w-20 text-right font-medium" placeholder="RHS" required />
               </div>
             ))}
             <div className="pt-2 text-sm text-gray-500 italics">
