@@ -79,7 +79,10 @@ function App() {
         ) : (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             <div className="flex justify-between items-center mb-6">
-              <button onClick={() => setHistory([])} className="flex items-center gap-2 text-primary hover:text-primary-hover font-medium">
+              <button onClick={() => {
+                setHistory([]);
+                window.history.pushState({}, '', window.location.pathname);
+              }} className="flex items-center gap-2 text-primary hover:text-primary-hover font-medium">
                 <RotateCcw size={18} /> New Problem
               </button>
               
