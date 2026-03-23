@@ -1,8 +1,5 @@
 import React, { useMemo } from 'react';
-import Plotly from 'plotly.js-dist-min';
-import createPlotlyComponent from 'react-plotly.js/factory';
-
-const Plot = createPlotlyComponent(Plotly);
+import Plot from 'react-plotly.js';
 
 const matrixDet3x3 = (m) => {
   return m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1]) -
