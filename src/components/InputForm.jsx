@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Plus, Minus, Calculator } from 'lucide-react';
 
 const InputForm = ({ onSolve }) => {
