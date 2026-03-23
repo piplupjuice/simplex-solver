@@ -2,8 +2,19 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 
 const FeasibleRegion2D = ({ constraints }) => {
-  // Only handle 2 variable problems
-  if (!constraints || constraints.length === 0 || constraints[0].coeffs.length !== 2) return null;
+  if (!constraints || constraints.length === 0) return null;
+
+  if (constraints[0].coeffs.length !== 2) {
+    return (
+      <div className="card p-6 mt-6 shadow-sm border-dashed border-gray-300 dark:border-slate-600 bg-gray-50/50 dark:bg-slate-800/50 text-center">
+        <h3 className="font-bold text-lg mb-2 text-gray-600 dark:text-gray-400">Graphical View Unavailable</h3>
+        <p className="text-sm text-gray-500">
+          The feasible region graph is only available for 2-dimensional boundaries (2 variables). 
+          Visualizing {constraints[0].coeffs.length}D intersections requires complex 3D plotting outside the scope of this view.
+        </p>
+      </div>
+    );
+  }
 
   // Generate data points for lines
   // constraint: a*x + b*y <= c  => y = (c - a*x) / b

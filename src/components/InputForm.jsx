@@ -76,16 +76,16 @@ const InputForm = ({ onSolve }) => {
         { coeffs: [1, 0, 0, 0, 0], rhs: 4 },
         { coeffs: [0, 2, 0, 0, 0], rhs: 12 },
         { coeffs: [3, 2, 0, 0, 0], rhs: 18 },
-        ...constraints.slice(3)
+        ...Array(7).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
       ]);
     } else if (id === 2) {
       setType('minimize');
       setNumVars(2); setNumConstraints(2);
-      setObjective([-3, 4, 0, 0, 0]); // Note: standard input for Minimize
+      setObjective([2, 3, 0, 0, 0]); 
       setConstraints([
-        { coeffs: [1, 1, 0, 0, 0], rhs: 4 },
-        { coeffs: [2, 3, 0, 0, 0], rhs: 18 },
-        ...constraints.slice(2)
+        { coeffs: [1, 1, 0, 0, 0], rhs: 10 },
+        { coeffs: [2, 1, 0, 0, 0], rhs: 15 },
+        ...Array(8).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
       ]);
     } else if (id === 3) {
       setType('maximize');
@@ -95,7 +95,7 @@ const InputForm = ({ onSolve }) => {
         { coeffs: [2, 3, 1, 0, 0], rhs: 5 },
         { coeffs: [4, 1, 2, 0, 0], rhs: 11 },
         { coeffs: [3, 4, 2, 0, 0], rhs: 8 },
-        ...constraints.slice(3)
+        ...Array(7).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
       ]);
     }
   };
@@ -130,10 +130,11 @@ const InputForm = ({ onSolve }) => {
           <Calculator className="text-primary" />
           Problem Definition
         </h2>
-        <div className="flex gap-2">
-          <button type="button" onClick={() => loadExample(1)} className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1 rounded">Ex 1 (Max)</button>
-          <button type="button" onClick={() => loadExample(2)} className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1 rounded">Ex 2 (Min)</button>
-          <button type="button" onClick={() => loadExample(3)} className="text-sm bg-gray-200 hover:bg-gray-300 dark:bg-slate-700 dark:hover:bg-slate-600 px-3 py-1 rounded">Ex 3 (3 Vars)</button>
+        <div className="flex gap-2 text-sm font-medium">
+          <span className="py-1 px-2 text-gray-400">Load Example:</span>
+          <button type="button" onClick={() => loadExample(1)} className="bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-900/40 dark:text-blue-200 px-3 py-1 rounded transition-colors">2 Vars (Max)</button>
+          <button type="button" onClick={() => loadExample(2)} className="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200 px-3 py-1 rounded transition-colors">2 Vars (Min)</button>
+          <button type="button" onClick={() => loadExample(3)} className="bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-900/40 dark:text-purple-200 px-3 py-1 rounded transition-colors">3 Vars (Max)</button>
         </div>
       </div>
 
