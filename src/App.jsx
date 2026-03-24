@@ -4,6 +4,7 @@ import InputForm from './components/InputForm';
 import SimplexTableau from './components/SimplexTableau';
 import Narrator from './components/Narrator';
 import FeasibleRegion2D from './components/FeasibleRegion2D';
+import FeasibleRegion3D from './components/FeasibleRegion3D';
 import { Moon, Sun, Play, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -133,7 +134,7 @@ function App() {
                   </h3>
                   
                   {curr.isOptimal && (
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                       {curr.basicVars.map((v, i) => {
                         // Only show main variables, ignore slacks for concise summary
                         if (v.startsWith('x')) {
@@ -165,12 +166,17 @@ function App() {
               <FeasibleRegion2D constraints={problemConfig.constraints} />
             )}
             
-            {/* Disclaimer for >2 variables */}
-            {problemConfig && problemConfig.constraints[0].coeffs.length > 2 && (
+            {/* 3D Plot for 3 variables */}
+            {problemConfig && problemConfig.constraints[0].coeffs.length === 3 && (
+              <FeasibleRegion3D constraints={problemConfig.constraints} />
+            )}
+
+            {/* Disclaimer for >3 variables */}
+            {problemConfig && problemConfig.constraints[0].coeffs.length > 3 && (
               <div className="card p-6 mt-6 shadow-sm border-dashed border-gray-300 dark:border-slate-600 bg-gray-50/50 dark:bg-slate-800/50 text-center">
                 <h3 className="font-bold text-lg mb-2 text-gray-600 dark:text-gray-400">Graphical View Unavailable</h3>
                 <p className="text-sm text-gray-500">
-                  The feasible region graph is explicitly supported only for 2 variable problems. 
+                  The feasible region graph is explicitly supported only for 2 and 3 variable problems. 
                   Visualizing {problemConfig.constraints[0].coeffs.length}D intersections is mathematically difficult to display on a 2D screen without heavy physics software.
                 </p>
               </div>

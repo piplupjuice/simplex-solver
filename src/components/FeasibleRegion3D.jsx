@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react';
-import Plot from 'react-plotly.js';
+import ReactPlot from 'react-plotly.js';
+const Plot = ReactPlot.default || ReactPlot;
 
 const matrixDet3x3 = (m) => {
   return m[0][0]*(m[1][1]*m[2][2] - m[1][2]*m[2][1]) -
