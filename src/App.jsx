@@ -50,7 +50,7 @@ function App() {
               <span className="text-primary">Simplex</span> Solver
             </h1>
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              MAT316 Operations Research
+              Created by piplupJuice
             </p>
           </div>
           <button 
