@@ -8,16 +8,17 @@ A production-ready, interactive web application to solve Linear Programming Prob
 - **Step-by-step Execution**: Understand the Simplex algorithm with plain English narration for each step
 - **Exact Mathematics**: Uses fractional arithmetic instead of floating-point decimals
 - **Visual Learning**: Pivot rows, columns, and cells are highlighted according to class notation
-- **2D Plotting**: Visualize the feasible region boundary lines for 2-variable problems
+- **2D & 3D Plotting**: Visualize the feasible region polygons for 2-variable problems and solid polyhedrons for 3-variable problems using Plotly
 - **Interactive Controls**: Navigate backwards and forwards through tableaus
 - **Modern UI**: Full Dark/Light mode support, mobile responsive, and smooth animated transitions
 - **Shareable**: Problem configurations are serialized to the URL so you can share specific homework questions easily
+- **Built-in Examples**: Load predefined example problems to explore how the solver works
 
 ## Tech Stack
 - React 18 + Vite
 - Tailwind CSS
 - Framer Motion
-- Recharts
+- Plotly.js (via react-plotly.js)
 - fraction.js
 
 ## Run Locally
