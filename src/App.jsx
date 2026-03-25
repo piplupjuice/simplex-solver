@@ -5,7 +5,7 @@ import SimplexTableau from './components/SimplexTableau';
 import Narrator from './components/Narrator';
 import FeasibleRegion2D from './components/FeasibleRegion2D';
 import FeasibleRegion3D from './components/FeasibleRegion3D';
-import { Moon, Sun, Play, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
+import { Moon, Sun, Play, SkipBack, SkipForward, RotateCcw, Github } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
@@ -49,9 +49,6 @@ function App() {
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center gap-2">
               <span className="text-primary">Simplex</span> Solver
             </h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
-              Created by piplupJuice
-            </p>
           </div>
           <button 
             onClick={() => setDarkMode(!darkMode)}
@@ -184,6 +181,19 @@ function App() {
           </motion.div>
         )}
       </main>
+
+      <footer className="fixed bottom-4 right-4 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 dark:border-slate-800 shadow-sm z-50">
+        <span>Created by <span className="font-semibold text-gray-800 dark:text-gray-200">piplupJuice</span></span>
+        <a 
+          href="https://github.com/piplupjuice" 
+          target="_blank" 
+          rel="noopener noreferrer" 
+          className="hover:text-primary transition-colors opacity-80 hover:opacity-100 hover:scale-110 transform duration-200 flex items-center"
+          title="View GitHub Profile"
+        >
+          <Github size={18} />
+        </a>
+      </footer>
     </div>
   );
 }
