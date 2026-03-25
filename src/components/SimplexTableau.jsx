@@ -58,7 +58,7 @@ const SimplexTableau = ({ tableau }) => {
           {/* Z-Row */}
           <tr className="bg-gray-50 dark:bg-slate-800/80 font-semibold border-t-2 border-gray-300 dark:border-slate-500">
             <td className="py-3 px-4 border-r border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">
-              Zj - Cj
+              
             </td>
             {zRow.map((val, cIdx) => (
               <td key={cIdx} className="py-3 px-4">
