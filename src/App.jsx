@@ -5,7 +5,7 @@ import SimplexTableau from './components/SimplexTableau';
 import Narrator from './components/Narrator';
 import FeasibleRegion2D from './components/FeasibleRegion2D';
 import FeasibleRegion3D from './components/FeasibleRegion3D';
-import { Moon, Sun, Play, SkipBack, SkipForward, RotateCcw, Github } from 'lucide-react';
+import { Moon, Sun, Play, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
 
 function App() {
@@ -191,7 +191,7 @@ function App() {
           className="hover:text-primary transition-colors opacity-80 hover:opacity-100 hover:scale-110 transform duration-200 flex items-center"
           title="View GitHub Profile"
         >
-          <Github size={18} />
+          <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.24c3-.34 6-1.53 6-6.76a1.5 1.5 0 0 0-.44-1.06 1.5 1.5 0 0 0-.04-1.04s-.36-.11-1.18.44a4.1 4.1 0 0 0-2.14-.3 4.1 4.1 0 0 0-2.14.3C10.66 9.17 10.3 9.28 10.3 9.28a1.5 1.5 0 0 0-.04 1.04 1.5 1.5 0 0 0-.44 1.06c0 5.22 3 6.42 6 6.76-.38.33-.7.86-.88 1.48-.8.36-2.58.82-3.72-1.06-1.12-1.84-3-1.84-3-1.84-.71 0-.11.5.11.75 1.34 1.48 2 3.82 2 3.82 1.43 1 3.28.66 4.1.48v2.74"></path></svg>
         </a>
       </footer>
     </div>
