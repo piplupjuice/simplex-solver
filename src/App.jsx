@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { initializeTableau, iterateSimplex } from './utils/simplex';
+import { initializeTableau, iterateSimplex, MValue } from './utils/simplex';
 import InputForm from './components/InputForm';
 import SimplexTableau from './components/SimplexTableau';
 import Narrator from './components/Narrator';
@@ -160,7 +160,7 @@ function App() {
                         <h4 className="font-bold mb-3 border-b pb-2 dark:border-slate-700">Constraint Verification</h4>
                         <ul className="space-y-2 font-mono text-sm">
                           {problemConfig.constraints.map((c, i) => {
-                            let lhsVal = new Fraction(0);
+                            let lhsVal = new MValue(0, 0);
                             const activeVars = [];
                             c.coeffs.forEach((coeff, j) => {
                               const varName = `x${j + 1}`;

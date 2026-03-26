@@ -12,9 +12,7 @@ try {
     tab = iterateSimplex(tab);
     iter++;
   }
-  const { buildCurrentSolution } = require('./src/utils/simplex.js') || {};
-  // Wait, I can't require ES module natively easily sometimes. Let's just print final items.
-  console.log("Final Phase:", tab.phase);
+  
   console.log("Final isInfeasible:", tab.isInfeasible);
   console.log("Final isOptimal:", tab.isOptimal);
   console.log("Final Basis:", tab.basicVars);
@@ -22,5 +20,7 @@ try {
   tab.matrix.forEach((r, i) => console.log(tab.basicVars[i], "=", r[r.length-1].toFraction()));
   console.log("Final Z:", tab.zRow[tab.zRow.length-1].toFraction());
 } catch (e) {
-  console.log(e.stack);
+  console.log("ERROR MESSAGE:", e.message);
+  console.log("LINE 1:", e.stack.split('\n')[1]);
+  console.log("LINE 2:", e.stack.split('\n')[2]);
 }

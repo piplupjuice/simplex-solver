@@ -1,5 +1,68 @@
 import Fraction from 'fraction.js';
 
+export class MValue {
+  constructor(m, c) {
+    this.m = m instanceof Fraction ? m.clone() : new Fraction(m);
+    this.c = c instanceof Fraction ? c.clone() : new Fraction(c);
+  }
+
+  clone() {
+    return new MValue(this.m, this.c);
+  }
+
+  add(other) {
+    if (other instanceof Fraction) return new MValue(this.m, this.c.add(other));
+    if (!(other instanceof MValue)) other = new MValue(0, other);
+    return new MValue(this.m.add(other.m), this.c.add(other.c));
+  }
+
+  sub(other) {
+    if (other instanceof Fraction) return new MValue(this.m, this.c.sub(other));
+    if (!(other instanceof MValue)) other = new MValue(0, other);
+    return new MValue(this.m.sub(other.m), this.c.sub(other.c));
+  }
+
+  mul(scalar) {
+    let s;
+    if (scalar instanceof Fraction) s = scalar;
+    else if (scalar instanceof MValue && scalar.m.valueOf() === 0) s = scalar.c;
+    else s = new Fraction(scalar);
+    return new MValue(this.m.mul(s), this.c.mul(s));
+  }
+
+  div(scalar) {
+    let s;
+    if (scalar instanceof Fraction) s = scalar;
+    else if (scalar instanceof MValue && scalar.m.valueOf() === 0) s = scalar.c;
+    else s = new Fraction(scalar);
+    return new MValue(this.m.div(s), this.c.div(s));
+  }
+
+  compare(other) {
+    let o = other instanceof MValue ? other : new MValue(0, other);
+    const mCmp = this.m.compare(o.m);
+    if (mCmp !== 0) return mCmp;
+    return this.c.compare(o.c);
+  }
+
+  toFraction() {
+    if (this.m.valueOf() === 0) return this.c.toFraction();
+    if (this.c.valueOf() === 0) {
+      if (this.m.valueOf() === 1) return "M";
+      if (this.m.valueOf() === -1) return "-M";
+      return `${this.m.toFraction()}M`;
+    }
+    
+    const mStr = this.m.valueOf() === 1 ? "M" : (this.m.valueOf() === -1 ? "-M" : `${this.m.toFraction()}M`);
+    const cStr = this.c.valueOf() > 0 ? `+${this.c.toFraction()}` : this.c.toFraction();
+    return `${mStr}${cStr}`;
+  }
+
+  valueOf() {
+    return this.m.valueOf() * 10000000 + this.c.valueOf();
+  }
+}
+
 export const initializeTableau = (type, objectiveCoeffs, constraints) => {
   const normalizedConstraints = constraints.map(c => {
     let newCoeffs = [...c.coeffs];
@@ -47,16 +110,16 @@ export const initializeTableau = (type, objectiveCoeffs, constraints) => {
   let sIdx = 0, eIdx = 0, aIdx = 0;
   normalizedConstraints.forEach(c => {
     const row = [];
-    c.coeffs.forEach(coeff => row.push(new Fraction(coeff)));
+    c.coeffs.forEach(coeff => row.push(new MValue(0, coeff)));
     
     // Slacks
-    for (let j = 0; j < numSlack; j++) row.push(new Fraction(c.type === '<=' && j === sIdx ? 1 : 0));
+    for (let j = 0; j < numSlack; j++) row.push(new MValue(0, c.type === '<=' && j === sIdx ? 1 : 0));
     // Surplus
-    for (let j = 0; j < numSurplus; j++) row.push(new Fraction(c.type === '>=' && j === eIdx ? -1 : 0));
+    for (let j = 0; j < numSurplus; j++) row.push(new MValue(0, c.type === '>=' && j === eIdx ? -1 : 0));
     // Artificial
-    for (let j = 0; j < numArtificial; j++) row.push(new Fraction((c.type === '>=' || c.type === '=') && j === aIdx ? 1 : 0));
+    for (let j = 0; j < numArtificial; j++) row.push(new MValue(0, (c.type === '>=' || c.type === '=') && j === aIdx ? 1 : 0));
     
-    row.push(new Fraction(c.rhs));
+    row.push(new MValue(0, c.rhs));
     matrix.push(row);
     
     if (c.type === '<=') {
@@ -71,22 +134,20 @@ export const initializeTableau = (type, objectiveCoeffs, constraints) => {
     }
   });
 
-  const BIG_M = new Fraction(10000000);
-  
   // Setup original Z row : Z - c*x = 0 -> Push -c_j
   const zRow = [];
   objectiveCoeffs.forEach(coeff => {
-    zRow.push(new Fraction(coeff).mul(-1));
+    zRow.push(new MValue(0, -coeff));
   });
   
-  for (let j = 0; j < numSlack; j++) zRow.push(new Fraction(0));
-  for (let j = 0; j < numSurplus; j++) zRow.push(new Fraction(0));
+  for (let j = 0; j < numSlack; j++) zRow.push(new MValue(0, 0));
+  for (let j = 0; j < numSurplus; j++) zRow.push(new MValue(0, 0));
   
   // Big-M penalties in Z-row array
   for (let j = 0; j < numArtificial; j++) {
-    zRow.push(isMax ? BIG_M.clone() : BIG_M.clone().mul(-1));
+    zRow.push(new MValue(isMax ? 1 : -1, 0));
   }
-  zRow.push(new Fraction(0)); // RHS
+  zRow.push(new MValue(0, 0)); // RHS
 
   // Row Zero Normalization for Artificial Variables
   for (let i = 0; i < basicVars.length; i++) {
@@ -164,7 +225,7 @@ export const identifyPivot = (tableau) => {
   const activeZRow = tableau.zRow;
   const isMaxPhase = tableau.type === 'maximize';
   
-  let bestColVal = new Fraction(0);
+  let bestColVal = new MValue(0, 0);
   let pivotCol = -1;
 
   for (let j = 0; j < activeZRow.length - 1; j++) {
@@ -220,7 +281,7 @@ export const identifyPivot = (tableau) => {
 
     if (colVal.compare(0) > 0) {
       const ratio = rhs.div(colVal);
-      const ratioNum = ratio.d.toString() === '1' ? ratio.n.toString() : ratio.toFraction();
+      const ratioNum = ratio.toFraction();
       
       let isStrictMin = false;
       if (minRatio === null || ratio.compare(minRatio) < 0) {
@@ -275,14 +336,8 @@ export const identifyPivot = (tableau) => {
   
   const adjective = isMaxPhase ? "negative" : "positive";
   const direction = isMaxPhase ? "increases" : "decreases";
-    
-  let displayVal = bestColVal.toFraction();
-  // Simple heuristic abbreviation for UI to not clog it with pure 10000000 math
-  if (Math.abs(bestColVal.valueOf()) > 1000000) {
-    displayVal = bestColVal.valueOf() > 0 ? "highly positive (+M)" : "highly negative (-M)";
-  }
 
-  tableau.narration = `Step ${tableau.stepNumber + 1}: Variable ${enteringVar} enters because ${displayVal} is the most ${adjective}, meaning it ${direction} Z the most. ${leavingVar} leaves. Pivot on element ${tableau.matrix[pivotRow][pivotCol].toFraction()}.`;
+  tableau.narration = `Step ${tableau.stepNumber + 1}: Variable ${enteringVar} enters because ${bestColVal.toFraction()} is the most ${adjective}, meaning it ${direction} Z the most. ${leavingVar} leaves. Pivot on element ${tableau.matrix[pivotRow][pivotCol].toFraction()}.`;
   tableau.currentSolution = buildCurrentSolution(tableau);
 
   return tableau;
@@ -294,8 +349,8 @@ export const iterateSimplex = (tableau) => {
   const { row: pRow, col: pCol } = tableau.pivotCell;
   const pivotElt = tableau.matrix[pRow][pCol];
   
-  const newMatrix = tableau.matrix.map(row => row.map(v => new Fraction(v)));
-  const newZRow = tableau.zRow.map(v => new Fraction(v));
+  const newMatrix = tableau.matrix.map(row => row.map(v => v.clone()));
+  const newZRow = tableau.zRow.map(v => v.clone());
   const newBasicVars = [...tableau.basicVars];
 
   newBasicVars[pRow] = tableau.headers[pCol + 1];

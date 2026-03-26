@@ -1,7 +1,14 @@
 import React from 'react';
 
 const FractionDisplay = ({ fraction }) => {
-  // fraction is an instance of fraction.js
+  if (fraction == null) return null;
+
+  // Handle Symbolic MValue Objects seamlessly:
+  if (fraction.m !== undefined) {
+    return <span className="font-medium whitespace-nowrap">{fraction.toFraction()}</span>;
+  }
+
+  // Handle raw fraction.js instances
   const s = fraction.s.toString() === '-1' ? '-' : '';
   const n = fraction.n.toString();
   const d = fraction.d.toString();
