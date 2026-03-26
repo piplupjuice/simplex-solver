@@ -8,7 +8,7 @@ const InputForm = ({ onSolve }) => {
   
   const [objective, setObjective] = useState(Array(5).fill(0));
   const [constraints, setConstraints] = useState(
-    Array(10).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
+    Array(10).fill(null).map(() => ({ coeffs: Array(5).fill(0), type: '<=', rhs: 0 }))
   );
 
   useEffect(() => {
@@ -30,13 +30,18 @@ const InputForm = ({ onSolve }) => {
         setObjective(newObj);
       }
 
-      const newC = Array(10).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }));
+      const newC = Array(10).fill(null).map(() => ({ coeffs: Array(5).fill(0), type: '<=', rhs: 0 }));
       for (let i = 0; i < pCons; i++) {
         const cRow = params.get(`c${i}`);
         if (cRow) {
-          const parts = cRow.split(',').map(Number);
-          const rhs = parts.pop();
-          parts.forEach((v, j) => { if (j < 5) newC[i].coeffs[j] = v; });
+          const parts = cRow.split(',');
+          const rhs = Number(parts.pop());
+          let cType = '<=';
+          if (['<=', '>=', '='].includes(parts[parts.length - 1])) {
+            cType = parts.pop();
+          }
+          parts.forEach((v, j) => { if (j < 5) newC[i].coeffs[j] = Number(v); });
+          newC[i].type = cType;
           newC[i].rhs = rhs;
         }
       }
@@ -61,6 +66,12 @@ const InputForm = ({ onSolve }) => {
     setConstraints(newC);
   };
 
+  const handleTypeChange = (rIdx, value) => {
+    const newC = [...constraints];
+    newC[rIdx].type = value;
+    setConstraints(newC);
+  };
+
   const handleRhsChange = (rIdx, value) => {
     const newC = [...constraints];
     newC[rIdx].rhs = value;
@@ -73,29 +84,29 @@ const InputForm = ({ onSolve }) => {
       setNumVars(2); setNumConstraints(3);
       setObjective([3, 5, 0, 0, 0]);
       setConstraints([
-        { coeffs: [1, 0, 0, 0, 0], rhs: 4 },
-        { coeffs: [0, 2, 0, 0, 0], rhs: 12 },
-        { coeffs: [3, 2, 0, 0, 0], rhs: 18 },
-        ...Array(7).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
+        { coeffs: [1, 0, 0, 0, 0], type: '<=', rhs: 4 },
+        { coeffs: [0, 2, 0, 0, 0], type: '<=', rhs: 12 },
+        { coeffs: [3, 2, 0, 0, 0], type: '<=', rhs: 18 },
+        ...Array(7).fill(null).map(() => ({ coeffs: Array(5).fill(0), type: '<=', rhs: 0 }))
       ]);
     } else if (id === 2) {
       setType('minimize');
       setNumVars(2); setNumConstraints(2);
       setObjective([-2, -3, 0, 0, 0]); 
       setConstraints([
-        { coeffs: [1, 1, 0, 0, 0], rhs: 10 },
-        { coeffs: [2, 1, 0, 0, 0], rhs: 15 },
-        ...Array(8).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
+        { coeffs: [1, 1, 0, 0, 0], type: '<=', rhs: 10 },
+        { coeffs: [2, 1, 0, 0, 0], type: '<=', rhs: 15 },
+        ...Array(8).fill(null).map(() => ({ coeffs: Array(5).fill(0), type: '<=', rhs: 0 }))
       ]);
     } else if (id === 3) {
       setType('maximize');
       setNumVars(3); setNumConstraints(3);
       setObjective([5, 4, 3, 0, 0]);
       setConstraints([
-        { coeffs: [2, 3, 1, 0, 0], rhs: 5 },
-        { coeffs: [4, 1, 2, 0, 0], rhs: 11 },
-        { coeffs: [3, 4, 2, 0, 0], rhs: 8 },
-        ...Array(7).fill(null).map(() => ({ coeffs: Array(5).fill(0), rhs: 0 }))
+        { coeffs: [2, 3, 1, 0, 0], type: '<=', rhs: 5 },
+        { coeffs: [4, 1, 2, 0, 0], type: '<=', rhs: 11 },
+        { coeffs: [3, 4, 2, 0, 0], type: '<=', rhs: 8 },
+        ...Array(7).fill(null).map(() => ({ coeffs: Array(5).fill(0), type: '<=', rhs: 0 }))
       ]);
     }
   };
@@ -109,7 +120,7 @@ const InputForm = ({ onSolve }) => {
     const activeObjective = objective.slice(0, safeNumVars).map(v => parseFloat(v) || 0);
     const activeConstraints = constraints.slice(0, safeNumCons).map(c => ({
       coeffs: c.coeffs.slice(0, safeNumVars).map(v => parseFloat(v) || 0),
-      type: '<=', 
+      type: c.type || '<=', 
       rhs: parseFloat(c.rhs) || 0
     }));
     
@@ -119,7 +130,7 @@ const InputForm = ({ onSolve }) => {
     params.set('cons', safeNumCons.toString());
     params.set('obj', activeObjective.join(','));
     activeConstraints.forEach((c, i) => {
-      params.set(`c${i}`, [...c.coeffs, c.rhs].join(','));
+      params.set(`c${i}`, [...c.coeffs, c.type, c.rhs].join(','));
     });
     window.history.pushState({}, '', `${window.location.pathname}?${params.toString()}`);
 
@@ -197,7 +208,15 @@ const InputForm = ({ onSolve }) => {
                     </div>
                   </React.Fragment>
                 ))}
-                <span className="mx-2 font-bold text-gray-500">≤</span>
+                <select 
+                  value={constraints[rIdx].type} 
+                  onChange={e => handleTypeChange(rIdx, e.target.value)} 
+                  className="mx-2 font-bold text-gray-500 bg-transparent border-0 border-b-2 border-gray-300 focus:border-primary focus:ring-0 p-1 min-w-[50px] text-center"
+                >
+                  <option value="<=">≤</option>
+                  <option value="=">=</option>
+                  <option value=">=">≥</option>
+                </select>
                 <input type="number" step="any" value={constraints[rIdx].rhs === 0 ? '0' : constraints[rIdx].rhs} onChange={e => handleRhsChange(rIdx, e.target.value)} className="w-20 text-right font-medium" placeholder="RHS" required />
               </div>
             ))}

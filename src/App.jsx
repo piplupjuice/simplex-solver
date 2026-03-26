@@ -7,6 +7,7 @@ import FeasibleRegion2D from './components/FeasibleRegion2D';
 import FeasibleRegion3D from './components/FeasibleRegion3D';
 import { Moon, Sun, Play, SkipBack, SkipForward, RotateCcw } from 'lucide-react';
 import { AnimatePresence, motion } from 'framer-motion';
+import Fraction from 'fraction.js';
 
 function App() {
   const [darkMode, setDarkMode] = useState(false);
@@ -29,7 +30,7 @@ function App() {
 
     // Hard limit iterations to prevent infinite loops (e.g. degeneracy cycling without Bland's rule)
     let iter = 0;
-    while (!currTableau.isOptimal && !currTableau.isUnbounded && iter < 30) {
+    while (!currTableau.isOptimal && !currTableau.isUnbounded && !currTableau.isInfeasible && iter < 30) {
       currTableau = iterateSimplex(currTableau);
       tableaus.push(currTableau);
       iter++;
@@ -120,37 +121,91 @@ function App() {
                 </motion.div>
               </AnimatePresence>
 
-              {(curr.isOptimal || curr.isUnbounded) && (
+              {(curr.isOptimal || curr.isUnbounded || curr.isInfeasible) && (
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   className={`card p-6 border-l-4 shadow-sm ${curr.isOptimal ? 'border-l-green-500 bg-green-50/50 dark:bg-green-900/10 text-green-900 dark:text-green-100' : 'border-l-red-500 bg-red-50/50 dark:bg-red-900/10 text-red-900 dark:text-red-100'}`}
                 >
                   <h3 className="font-bold text-xl mb-4 flex items-center gap-2">
-                    {curr.isOptimal ? '🎉 Optimal Solution Reached' : '⚠️ Problem is Unbounded'}
+                    {curr.isOptimal ? '🎉 Optimal Solution Reached' : (curr.isInfeasible ? '⚠️ Problem is Infeasible' : '⚠️ Problem is Unbounded')}
                   </h3>
                   
                   {curr.isOptimal && (
-                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                      {curr.basicVars.map((v, i) => {
-                        // Only show main variables, ignore slacks for concise summary
-                        if (v.startsWith('x')) {
+                    <div className="space-y-6">
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        {curr.origVars.map((v) => {
+                          const rIdx = curr.basicVars.indexOf(v);
+                          const valStr = rIdx !== -1 
+                            ? curr.matrix[rIdx][curr.matrix[rIdx].length - 1].toFraction() 
+                            : '0';
                           return (
-                            <div key={v} className="bg-white dark:bg-slate-800 p-3 rounded shadow-sm flex flex-col items-center">
-                              <span className="text-xs text-gray-500 uppercase tracking-wide">{v}</span>
-                              <span className="text-lg font-bold">
-                                {curr.matrix[i][curr.matrix[i].length - 1].toFraction()}
+                            <div key={v} className={`bg-white dark:bg-slate-800 p-3 rounded shadow-sm flex flex-col items-center ${valStr === '0' ? 'opacity-70' : ''}`}>
+                              <span className="text-xs text-gray-500 uppercase tracking-wide">
+                                {v} {valStr === '0' && <span className="lowercase text-[10px] ml-1">(not used in optimal solution)</span>}
                               </span>
+                              <span className="text-lg font-bold">{valStr}</span>
                             </div>
                           );
-                        }
-                        return null;
-                      })}
-                      <div className="bg-white dark:bg-slate-800 p-3 rounded shadow-sm flex flex-col items-center col-span-2 md:col-span-1">
-                        <span className="text-xs text-primary uppercase tracking-wide font-bold">Optimal Z</span>
-                        <span className="text-xl font-black text-primary">
-                          {curr.zRow[curr.zRow.length - 1].toFraction()}
-                        </span>
+                        })}
+                        <div className="bg-white dark:bg-slate-800 p-3 rounded shadow-sm flex flex-col items-center col-span-2 md:col-span-1 border-2 border-primary/20">
+                          <span className="text-xs text-primary uppercase tracking-wide font-bold">Optimal Z</span>
+                          <span className="text-xl font-black text-primary">
+                            {curr.zRow[curr.zRow.length - 1].toFraction()}
+                          </span>
+                        </div>
+                      </div>
+
+                      <div className="bg-white/60 dark:bg-slate-800/60 p-4 rounded border border-gray-200 dark:border-slate-700">
+                        <h4 className="font-bold mb-3 border-b pb-2 dark:border-slate-700">Constraint Verification</h4>
+                        <ul className="space-y-2 font-mono text-sm">
+                          {problemConfig.constraints.map((c, i) => {
+                            let lhsVal = new Fraction(0);
+                            const activeVars = [];
+                            c.coeffs.forEach((coeff, j) => {
+                              const varName = `x${j + 1}`;
+                              const rIdx = curr.basicVars.indexOf(varName);
+                              if (rIdx !== -1) {
+                                const varVal = curr.matrix[rIdx][curr.matrix[rIdx].length - 1];
+                                lhsVal = lhsVal.add(varVal.mul(coeff));
+                                if (coeff !== 0) {
+                                  activeVars.push(`${coeff}(${varVal.toFraction()})`);
+                                }
+                              } else {
+                                if (coeff !== 0) activeVars.push(`${coeff}(0)`);
+                              }
+                            });
+                            
+                            const lhsStr = lhsVal.toFraction();
+                            let isSatisfied = false;
+                            if (c.type === '<=') isSatisfied = lhsVal.compare(c.rhs) <= 0;
+                            else if (c.type === '>=') isSatisfied = lhsVal.compare(c.rhs) >= 0;
+                            else isSatisfied = lhsVal.compare(c.rhs) === 0;
+
+                            return (
+                              <li key={i} className="flex items-start gap-2 border-b border-gray-100 dark:border-slate-700/50 pb-2 last:border-0 last:pb-0">
+                                <span className={isSatisfied ? 'text-green-500' : 'text-red-500'}>{isSatisfied ? '✅' : '❌'}</span>
+                                <div>
+                                  <div className="text-gray-800 dark:text-gray-200">
+                                    {activeVars.join(' + ') || '0'} = <span className="font-bold">{lhsStr}</span>
+                                  </div>
+                                  <div className="text-xs text-gray-500">
+                                    Constraint {i + 1}: Required {lhsStr} {c.type} {c.rhs}
+                                  </div>
+                                </div>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      </div>
+
+                      <div className="text-sm bg-blue-50/50 dark:bg-blue-900/10 p-3 rounded">
+                        <strong>Summary: </strong> To {curr.type} Z, set {
+                          curr.origVars.filter(v => v.startsWith('x')).map(v => {
+                            const rIdx = curr.basicVars.indexOf(v);
+                            return `${v}=${rIdx !== -1 ? curr.matrix[rIdx][curr.matrix[rIdx].length - 1].toFraction() : '0'}`;
+                          }).join(', ')
+                        } for a {curr.type === 'maximize' ? 'maximum' : 'minimum'} value of {curr.zRow[curr.zRow.length - 1].toFraction()}.
                       </div>
                     </div>
                   )}
@@ -160,12 +215,12 @@ function App() {
 
             {/* 2D Plot for 2 variables */}
             {problemConfig && problemConfig.constraints[0].coeffs.length === 2 && (
-              <FeasibleRegion2D constraints={problemConfig.constraints} />
+              <FeasibleRegion2D constraints={problemConfig.constraints} tableau={curr} />
             )}
             
             {/* 3D Plot for 3 variables */}
             {problemConfig && problemConfig.constraints[0].coeffs.length === 3 && (
-              <FeasibleRegion3D constraints={problemConfig.constraints} />
+              <FeasibleRegion3D constraints={problemConfig.constraints} tableau={curr} />
             )}
 
             {/* Disclaimer for >3 variables */}

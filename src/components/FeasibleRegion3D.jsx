@@ -36,7 +36,7 @@ const FeasibleRegion3D = ({ constraints }) => {
         b: c.coeffs[1], 
         c: c.coeffs[2], 
         d: c.rhs, 
-        type: '<=' // default to canonical form
+        type: c.type
       });
     });
 
@@ -61,6 +61,7 @@ const FeasibleRegion3D = ({ constraints }) => {
               const val = p.a * pt[0] + p.b * pt[1] + p.c * pt[2];
               if (p.type === '<=' && val > p.d + 1e-6) feasible = false;
               if (p.type === '>=' && val < p.d - 1e-6) feasible = false;
+              if (p.type === '=' && Math.abs(val - p.d) > 1e-6) feasible = false;
             }
             if (feasible) {
               // Add only unique vertices

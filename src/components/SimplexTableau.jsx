@@ -16,13 +16,39 @@ const SimplexTableau = ({ tableau }) => {
     const isPivotRow = pivotCell.row === rIdx;
 
     if (isPivotCol && isPivotRow) {
-      classes += "bg-pivot-cell text-white font-bold "; // red
+      classes += "bg-purple-200 dark:bg-purple-800/60 border-2 border-purple-500 font-bold z-10 ";
     } else if (isPivotRow) {
-      classes += "bg-pivot-row "; // blue
+      classes += "bg-red-100 dark:bg-red-900/40 ";
     } else if (isPivotCol) {
-      classes += "bg-pivot-col "; // amber
+      classes += "bg-blue-100 dark:bg-blue-900/40 ";
     }
     return classes;
+  };
+
+  const copyLatex = () => {
+    // Generate LaTeX string
+    let cols = "c|".repeat(headers.length - 1) + "c";
+    let latex = `\\begin{array}{${cols}}\n`;
+    
+    // Header
+    latex += headers.join(' & ') + ' \\\\\n\\hline\n';
+    
+    // Matrix rows
+    for (let i = 0; i < matrix.length; i++) {
+      let rowVals = matrix[i].map(val => val.toFraction());
+      latex += `${basicVars[i]} & ` + rowVals.join(' & ') + ' \\\\\n';
+    }
+    
+    // Z-Row
+    latex += '\\hline\n';
+    let zRowVals = zRow.map(val => val.toFraction());
+    latex += `\\text{Objective (Z)} & ` + zRowVals.join(' & ') + ' \\\\\n';
+    
+    latex += `\\end{array}`;
+
+    navigator.clipboard.writeText(latex);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -30,15 +56,17 @@ const SimplexTableau = ({ tableau }) => {
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4 }}
-      className="card overflow-x-auto shadow-sm"
+      className="card shadow-sm"
     >
+
+      <div className="overflow-x-auto">
       <table className="w-full text-sm">
         <thead className="bg-gray-100 dark:bg-slate-800 border-b border-gray-300 dark:border-slate-600">
           <tr>
             {headers.map((h, i) => (
-              <th key={i} className="py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">
-                {h}
-              </th>
+                <th key={i} className="py-3 px-4 font-semibold text-gray-700 dark:text-gray-200">
+                  {h}
+                </th>
             ))}
           </tr>
         </thead>
@@ -49,16 +77,16 @@ const SimplexTableau = ({ tableau }) => {
                 {basicVars[rIdx]}
               </td>
               {row.map((val, cIdx) => (
-                <td key={cIdx} className={`py-2 px-4 ${getCellClass(rIdx, cIdx)}`}>
-                  <FractionDisplay fraction={val} />
-                </td>
+                  <td key={cIdx} className={`py-2 px-4 ${getCellClass(rIdx, cIdx)}`}>
+                    <FractionDisplay fraction={val} />
+                  </td>
               ))}
             </tr>
           ))}
           {/* Z-Row */}
           <tr className="bg-gray-50 dark:bg-slate-800/80 font-semibold border-t-2 border-gray-300 dark:border-slate-500">
             <td className="py-3 px-4 border-r border-gray-200 dark:border-slate-700 text-blue-600 dark:text-blue-400">
-              
+              Objective (Z)
             </td>
             {zRow.map((val, cIdx) => (
               <td key={cIdx} className="py-3 px-4">
@@ -68,6 +96,7 @@ const SimplexTableau = ({ tableau }) => {
           </tr>
         </tbody>
       </table>
+      </div>
     </motion.div>
   );
 };

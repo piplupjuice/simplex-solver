@@ -1,0 +1,11 @@
+ReferenceError: copied is not defined
+    at SimplexTableau (C:\Users\nehad\Desktop\or\src\components\SimplexTableau.jsx:66:12)
+    at Object.react_stack_bottom_frame (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:9808:18)
+    at renderWithHooks (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5062:19)
+    at renderElement (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:5497:23)
+    at retryNode (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:6417:31)
+    at performWork (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:7435:17)
+    at startWork (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:8270:7)
+    at renderToStringImpl (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:8380:7)
+    at Object.process.env.NODE_ENV.exports.renderToString (C:\Users\nehad\Desktop\or\node_modules\react-dom\cjs\react-dom-server-legacy.node.development.js:9869:14)
+    at C:\Users\nehad\Desktop\or\test_render.js:15:31

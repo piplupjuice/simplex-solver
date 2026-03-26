@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import ReactPlot from 'react-plotly.js';
 const Plot = ReactPlot.default || ReactPlot;
 
-const FeasibleRegion2D = ({ constraints }) => {
+const FeasibleRegion2D = ({ constraints, tableau }) => {
   const plotData = useMemo(() => {
     if (!constraints || constraints.length === 0 || constraints[0].coeffs.length !== 2) {
       return null;
@@ -20,7 +20,7 @@ const FeasibleRegion2D = ({ constraints }) => {
         a: c.coeffs[0],
         b: c.coeffs[1],
         c: c.rhs,
-        type: '<=' // Assuming canonical form
+        type: c.type
       });
     });
 
@@ -47,6 +47,7 @@ const FeasibleRegion2D = ({ constraints }) => {
             const val = lk.a * x + lk.b * y;
             if (lk.type === '<=' && val > lk.c + 1e-6) feasible = false;
             if (lk.type === '>=' && val < lk.c - 1e-6) feasible = false;
+            if (lk.type === '=' && Math.abs(val - lk.c) > 1e-6) feasible = false;
           }
 
           if (feasible) {
@@ -60,7 +61,7 @@ const FeasibleRegion2D = ({ constraints }) => {
       }
     }
 
-    if (validVertices.length < 3) return { lines, validVertices: [] };
+
 
     // Sort validVertices in counter-clockwise order
     const cx = validVertices.reduce((sum, v) => sum + v.x, 0) / validVertices.length;
@@ -95,6 +96,16 @@ const FeasibleRegion2D = ({ constraints }) => {
     maxX = Math.max(...validVertices.map(v => v.x)) * 1.5;
     maxY = Math.max(...validVertices.map(v => v.y)) * 1.5;
   }
+  
+  if (tableau && tableau.isOptimal) {
+    const x1Idx = tableau.basicVars.indexOf('x1');
+    const x2Idx = tableau.basicVars.indexOf('x2');
+    const optX1 = x1Idx !== -1 ? tableau.matrix[x1Idx][tableau.matrix[x1Idx].length - 1].valueOf() : 0;
+    const optX2 = x2Idx !== -1 ? tableau.matrix[x2Idx][tableau.matrix[x2Idx].length - 1].valueOf() : 0;
+    if (optX1 * 1.5 > maxX) maxX = optX1 * 1.5;
+    if (optX2 * 1.5 > maxY) maxY = optX2 * 1.5;
+  }
+  
   // Ensure strict min bounds
   if (maxX <= 0) maxX = 10;
   if (maxY <= 0) maxY = 10;
@@ -151,10 +162,7 @@ const FeasibleRegion2D = ({ constraints }) => {
       y: closedVertices.map(v => v.y),
       fill: 'toself',
       fillcolor: 'rgba(16, 185, 129, 0.4)', // Emerald 500
-      line: {
-        color: 'rgba(16, 185, 129, 0.8)',
-        width: 2
-      },
+      line: { color: 'rgba(16, 185, 129, 0.8)', width: 2 },
       name: 'Feasible Region',
       hoverinfo: 'x+y+name'
     });
@@ -166,6 +174,26 @@ const FeasibleRegion2D = ({ constraints }) => {
       marker: { size: 8, color: '#047857' }, // Emerald 700
       name: 'Vertices',
       hoverinfo: 'x+y'
+    });
+  } else if (validVertices && validVertices.length === 2) {
+    // Render strict linear segments (e.g. constraints strictly defined entirely by equations)
+    plotlyData.push({
+      x: validVertices.map(v => v.x),
+      y: validVertices.map(v => v.y),
+      mode: 'lines+markers',
+      line: { color: 'rgba(16, 185, 129, 0.8)', width: 4 },
+      marker: { size: 8, color: '#047857' },
+      name: 'Feasible Region (Line)',
+      hoverinfo: 'x+y+name'
+    });
+  } else if (validVertices && validVertices.length === 1) {
+    plotlyData.push({
+      x: [validVertices[0].x],
+      y: [validVertices[0].y],
+      mode: 'markers',
+      marker: { size: 8, color: '#047857' },
+      name: 'Feasible Region (Point)',
+      hoverinfo: 'x+y+name'
     });
   }
 
@@ -192,7 +220,7 @@ const FeasibleRegion2D = ({ constraints }) => {
             width: 2,
             dash: 'dash'
           },
-          name: `${l.a}x₁ ${l.b >= 0 ? '+' : '-'} ${Math.abs(l.b)}x₂ ≤ ${l.c}`,
+          name: `${l.a}x₁ ${l.b >= 0 ? '+' : '-'} ${Math.abs(l.b)}x₂ ${l.type === '=' ? '=' : (l.type === '>=' ? '≥' : '≤')} ${l.c}`,
           hoverinfo: 'name'
         });
         constraintIdx++;
@@ -200,13 +228,42 @@ const FeasibleRegion2D = ({ constraints }) => {
     });
   }
 
+  // 3. Mark Optimal Point explicitly
+  if (tableau && tableau.isOptimal) {
+    const x1Idx = tableau.basicVars.indexOf('x1');
+    const x2Idx = tableau.basicVars.indexOf('x2');
+    const optX1 = x1Idx !== -1 ? tableau.matrix[x1Idx][tableau.matrix[x1Idx].length - 1].valueOf() : 0;
+    const optX2 = x2Idx !== -1 ? tableau.matrix[x2Idx][tableau.matrix[x2Idx].length - 1].valueOf() : 0;
+
+    plotlyData.push({
+      x: [optX1],
+      y: [optX2],
+      mode: 'markers+text',
+      marker: {
+        symbol: 'star',
+        size: 16,
+        color: '#fbbf24', // yellow-400
+        line: { color: '#b45309', width: 2 } // yellow-700
+      },
+      text: [`Optimal: (${optX1.toFixed(2)}, ${optX2.toFixed(2)})`],
+      textposition: 'top center',
+      textfont: { size: 13, color: '#b45309', weight: 'bold' },
+      name: 'Optimal Point',
+      hoverinfo: 'name'
+    });
+  }
+
   return (
     <div className="card p-6 mt-6 shadow-sm overflow-hidden">
       <h3 className="font-bold text-lg mb-4 text-gray-800 dark:text-gray-200">2D Feasible Region & Constraints</h3>
       
-      {(!validVertices || validVertices.length === 0) ? (
-        <div className="bg-red-50 text-red-600 p-4 rounded text-center">
-          The problem is unbounded or infeasible. No enclosed feasible region found.
+      {tableau && tableau.isInfeasible ? (
+        <div className="bg-red-50 text-red-600 p-4 rounded text-center border-l-4 border-red-500">
+          The problem is Infeasible. The constraints do not enclose any mutually valid region.
+        </div>
+      ) : tableau && tableau.isUnbounded ? (
+        <div className="bg-orange-50 text-orange-700 p-4 rounded text-center border-l-4 border-orange-500">
+          The problem is Unbounded. The feasible region stretches infinitely.
         </div>
       ) : (
          <div className="w-full h-[500px] flex justify-center bg-gray-50 dark:bg-slate-800/50 rounded-lg">
