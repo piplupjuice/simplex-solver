@@ -1,6 +1,7 @@
 # Simplex Method Solver
 
 A production-ready, interactive web application to solve Linear Programming Problems step by step using the Simplex Method. Built for MAT316 Operations Research.
+link : https://simplex-solver-ten.vercel.app/
 
 ![Simplex Solver Demo](demo.gif)
 
